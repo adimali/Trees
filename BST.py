@@ -1,5 +1,6 @@
 #!/usr/bin/python
-
+from random import randint
+from drawtree import draw_level_order # print_tree requires this
 class Node:
     def __init__(self, key, val, left=None, right=None, parent=None):
         self.key = key
@@ -195,7 +196,27 @@ class Tree:
             if (n.right!=None):
                 q.append(n.right)
                 
-
+           
+    def print_tree(self):
+        q=[]
+        r='{'
+        q.append(self.root)
+        while len([i for i in q if type(i)!=str])!=0:
+            n=q.pop(0)
+            if n=="#":
+                r+=n+','
+            else:
+                r+=str(n.key)+','
+            if (n!="#"):                  
+                if (n.left!=None):
+                    q.append(n.left)
+                else:
+                    q.append("#")
+                if (n.right!=None):
+                    q.append(n.right)
+                else:
+                    q.append("#")
+        draw_level_order( r[:-1]+'}')
 
     def height(self):
         return self._height(self.root)
@@ -207,8 +228,6 @@ class Tree:
 
 # Example use
 
-from random import randint
-
 tree = Tree()
 Key=[]
 Value=[]
@@ -218,15 +237,17 @@ for i in range(15):
     tree.insert(Key[i],Value[i])
     print Key[i], Value[i]
 
+
+tree.print_tree()
 print "minimum = " , tree.minimum()
 print "maximum = " , tree.maximum()
 print "Value in ", Key[4], " = ", tree.search(Key[4])
 print "Tree Size = ",tree.size
 print "Height= ",tree.height()
-for d in tree.in_order():
-    print d
+print "in_order traversal = "  ,[i for i in tree.in_order()]
+print "pre_order traversal = "  ,[i for i in tree.pre_order()]
+print "post_order traversal = "  ,[i for i in tree.post_order()]
+print "level_order traversal = "  ,[i for i in tree.level_order()]
 print tree.delete(Key[0])
-print "Value in ", Key[0], " = ", tree.search(Key[0])
-for i in tree.level_order():
-    print i
-            
+tree.print_tree()
+
