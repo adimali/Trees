@@ -1,0 +1,425 @@
+#!/usr/bin/python
+from random import randint
+from drawtree import draw_level_order # print_tree requires this
+class Node:
+    def __init__(self, key, val, left=None, right=None, parent=None):
+        self.key = key
+        self.val = val
+        self.left = left
+        self.right = right
+        self.parent = parent
+        self.height = 0
+        self.bf = 0 #balance factor
+        
+
+class Tree:
+    def __init__(self):
+        self.root = None
+        self.size =0
+
+    def insert(self, key, val):
+        self.size +=1
+        if(self.root == None):
+            self.root = Node(key,val)
+        else:
+            node=self._add(key, val, self.root)
+            self.rebalance(node)            
+
+    def _add(self, key, val, node):
+        if(key < node.key):
+            if(node.left == None):
+                node.left=Node(key,val,parent=node)
+                return node.left
+            else:
+                return self._add(key, val,node.left)
+        else: # if key is equal to node.key then it goes in right sub tree
+            if (node.right==None):
+                node.right=Node(key, val,parent=node)
+                return node.right
+            else:
+                return self._add(key, val, node.right)
+
+    def minimum(self):
+        if self.root==None:
+            return "empty tree"
+        else:
+            return self._min(self.root).key
+    def _min(self, node):
+        if node.left==None:
+            return node
+        else:
+            return self._min(node.left)
+    def maximum(self):
+        if self.root==None:
+            return "empty tree"
+        else:
+            return self._max(self.root).key
+    def _max(self, node):
+        if node.right==None:
+            return node
+        else:
+            return self._max(node.right)    
+
+    def search(self,key):
+        if self.root==None:
+            return "empty tree"
+        else:
+            Nd=self._search(key,self.root)
+            if Nd:
+                return Nd.val
+            else:
+                return "Key not found"
+        
+    def _search(self,key, node):
+        if key==node.key:
+            return node
+        elif key>node.key:
+            if node.right==None:
+                return None
+            else:
+                return self._search(key,node.right)
+        else:
+            if node.left==None:
+                return None
+            else:
+                return self._search(key,node.left)
+
+    
+    def in_order(self):
+        for n in self._in_order(self.root):
+            yield n.key
+
+    def _in_order(self,node):
+        if node!=None:
+            for n in self._in_order(node.left):
+                yield n
+            yield node
+            for n in self._in_order(node.right):
+                yield n
+    def pre_order(self):
+        for n in self._pre_order(self.root):
+            yield n.key
+
+    def _pre_order(self,node):
+        if node!=None:
+            yield node
+            for n in self._pre_order(node.left):
+                yield n
+            for n in self._pre_order(node.right):
+                yield n
+
+    def post_order(self):
+        for n in self._post_order(self.root):
+            yield n.key
+
+    def _post_order(self,node):
+        if node!=None:
+            for n in self._post_order(node.left):
+                yield n            
+            for n in self._post_order(node.right):
+                yield n            
+            yield node
+            
+    def level_order(self):
+        q=[]
+        q.append(self.root)
+        while len(q)!=0:
+            n=q.pop(0)
+            yield n.key
+            if (n.left!=None):
+                q.append(n.left)
+            if (n.right!=None):
+                q.append(n.right)
+                
+           
+    def print_tree(self, bf=False): # set bf to True if you need to print the balance factor instead of keys in the tree , for debugging. 
+        q=[]
+        r='{'
+        q.append(self.root)
+        while len([i for i in q if type(i)!=str])!=0:
+            n=q.pop(0)
+            if n=="#":
+                r+=n+','
+            else:
+                if bf==True:
+                    r+=str(n.bf)+','
+                else:
+                    r+=str(n.key)+','
+            if (n!="#"):                  
+                if (n.left!=None):
+                    q.append(n.left)
+                else:
+                    q.append("#")
+                if (n.right!=None):
+                    q.append(n.right)
+                else:
+                    q.append("#")
+        draw_level_order( r[:-1]+'}')
+       
+    def update_height(self): # this updates the balancing factor too.
+        self._height(self.root)
+        
+    def _height(self, node):
+        if node is None:
+            return 0        
+        else:
+            node.height=max(self._height(node.left),self._height(node.right))+1
+            if not (node.left or node.right):
+                node.bf=0
+            elif not node.left:
+                node.bf=-node.right.height
+            elif not node.right:
+                node.bf=node.left.height     
+            else:
+                node.bf=node.left.height-node.right.height
+            return node.height
+
+    def height(self,node=None):
+        self.update_height()
+        if node==None:
+            return self.root.height
+        else:
+            return node.height
+
+    def _is_right(self,node):
+        if node.parent:
+            if node.parent.right==node:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+
+    def _is_left(self,node):
+        if node.parent:
+            if node.parent.left==node:
+                return True
+            else:
+                return False
+        else:
+            return False        
+            
+    def _right_rotate(self, rot_node,child):
+        if rot_node==self.root:
+            self.root=child            
+        rot_node.left=child.right
+        if child.right:
+            child.right.parent=rot_node
+        child.parent=rot_node.parent        
+        child.right=rot_node
+        if self._is_right(rot_node):
+            rot_node.parent.right=child
+        elif self._is_left(rot_node):
+            rot_node.parent.left=child
+        rot_node.parent=child
+        return child.parent
+        
+    def _left_rotate(self, rot_node, child):
+        if rot_node==self.root:
+            self.root=child
+        rot_node.right=child.left
+        if child.left:
+            child.left.parent=rot_node
+        child.parent=rot_node.parent        
+        child.left=rot_node
+        if self._is_right(rot_node):
+            rot_node.parent.right=child
+        elif self._is_left(rot_node):
+            rot_node.parent.left=child
+        rot_node.parent=child
+        return child.parent
+        
+
+
+    def first_unbalanced_ancestor(self,node, ch=None, gch=None):
+        if node.parent==None:
+            return None
+        if ch==None:
+            ch=node        
+        if abs(node.parent.bf)>1:
+            return [node.parent, node, ch]
+        else:
+            return self.first_unbalanced_ancestor(node.parent,node,ch)
+        
+        
+
+    def rebalance(self,node):
+        self.update_height()
+        an=self.first_unbalanced_ancestor(node)
+        if an!=None:            
+            rot_node=an[0]
+            child=an[1]
+            grand_child=an[2]
+            if self._is_right(child) and self._is_right(grand_child):
+                self._left_rotate(rot_node,child)
+            elif self._is_right(child) and self._is_left(grand_child):
+                self._right_rotate(child,grand_child)
+                self._left_rotate(rot_node,grand_child)
+            elif self._is_left(child) and self._is_left(grand_child):
+                self._right_rotate(rot_node,child)
+            elif self._is_left(child) and self._is_right(grand_child):
+                self._left_rotate(child,grand_child)
+                self._right_rotate(rot_node,grand_child)    
+
+    def _successor(self,node):
+        return self._min(node.right)
+            
+        
+    def delete(self,key):
+        if self.root==None:
+            return "empty tree"
+        else:
+            Nd=self._search(key, self.root)
+            if Nd:                
+                r_nd=self._delete(Nd)
+                self.size-=1
+                self.rebalance_del(r_nd)
+                return "Key : " + str(key) + ", successfully deleted"
+            else:
+                return "Key not found"
+    def _delete(self,node):
+        if node.right == None and node.left == None:
+            if node==self.root:
+                self.root=None
+            elif node==node.parent.left:
+                node.parent.left=None
+            else:
+                node.parent.right=None
+            return node.parent  
+        elif node.right==None:
+            if node==self.root:
+                self.root=node.left
+                node.left.parent=None
+            elif node==node.parent.left:
+                node.left.parent=node.parent
+                node.parent.left=node.left
+            else:
+                node.left.parent=node.parent
+                node.parent.right=node.left
+            return node.left    
+        elif node.left==None:
+            if node==self.root:
+                self.root=node.right
+                node.right.parent=None                
+            elif node==node.parent.left:
+                node.parent.left=node.right
+                node.right.parent=node.parent
+            else:
+                node.parent.right=node.right
+                node.right.parent=node.parent
+            return node.right    
+        else:# Both children are present, now we have to replace the 
+                    #node by its successor in the right subtree
+            S=self._successor(node)
+            if S==node.right:
+                S.parent=node.parent
+                S.left=node.left
+                node.left.parent=S # node must have a left child to be here
+                if node!=self.root:
+                    if self._is_right(node):
+                        node.parent.right=S
+                    else:
+                        node.parent.left=S
+                else:
+                    self.root=S
+                rebalance_start=S
+            else:        
+                if S.right:
+                    rebalance_start= S.right
+                    S.right.parent=S.parent
+                    S.parent.left=S.right #S must be the left child
+                else:
+                    rebalance_start= S.parent
+                    S.parent.left=None #S must be the left child
+                if node==self.root:
+                    S.parent=None
+                    self.root=S
+                else:
+                    S.parent=node.parent
+                    if node==node.parent.left:
+                        node.parent.left=S
+                    else:
+                        node.parent.right=S    
+                S.left=node.left
+                S.right=node.right
+                node.left.parent=S
+                node.right.parent=S
+            return rebalance_start
+    
+        
+    def first_unbalanced_ancestor_del(self,node):
+        if not node:
+            return None
+        if abs(node.bf)>1:
+            
+            if node.right:
+                right_h=node.right.height
+            else:
+                right_h=0
+            if node.left:
+                left_h=node.left.height
+            else:
+                left_h=0
+                
+            if right_h>left_h:
+                ch=node.right
+            else:
+                ch=node.left
+
+            if ch.right:
+                right_h=ch.right.height
+            else:
+                right_h=0
+            if ch.left:
+                left_h=ch.left.height
+            else:
+                left_h=0
+                
+            if right_h>left_h:
+                gch=ch.right
+            else:
+                gch=ch.left
+                
+            return [node, ch, gch]
+        else:
+            return self.first_unbalanced_ancestor_del(node.parent)
+        
+    def rebalance_del(self,node):
+        next_node=node
+        while next_node:
+            self.update_height()
+            an=self.first_unbalanced_ancestor_del(next_node)
+            next_node=None
+            if an!=None:
+                rot_node=an[0]
+                child=an[1]
+                grand_child=an[2]
+                if self._is_right(child) and self._is_right(grand_child):
+                    next_node = self._left_rotate(rot_node,child)                 
+                elif self._is_right(child) and self._is_left(grand_child):
+                    self._right_rotate(child,grand_child)
+                    next_node = self._left_rotate(rot_node,grand_child)
+                elif self._is_left(child) and self._is_left(grand_child):
+                    next_node = self._right_rotate(rot_node,child)
+                elif self._is_left(child) and self._is_right(grand_child):
+                    self._left_rotate(child,grand_child)
+                    next_node = self._right_rotate(rot_node,grand_child)
+                
+# Example use
+
+tree = Tree()
+Key=[]
+Value=[]
+for i in range(1000):
+    Key.append(randint(0,99))
+    Value.append(randint(0,90))
+    tree.insert(Key[i],Value[i])
+    
+print Key, Value
+    
+for i in range(990):
+    tree.delete(Key[i])
+
+tree.print_tree()    
+
